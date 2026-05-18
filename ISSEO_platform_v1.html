@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>ISSEO — Plateforme</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --or:#D85A30;--orl:#FAECE7;--orb:#F0997B;
+  --grn:#16a34a;--red:#dc2626;--blue:#2563eb;
+  --bg:#f0f2f5;--sur:#fff;--brd:#e0ddd6;
+  --txt:#1a1a1a;--txt2:#555;--txt3:#999;
+  --pur:#7c3aed;--teal:#0891b2
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+
+/* HEADER */
+.hdr{background:var(--or);color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.hdr-logo{font-size:17px;font-weight:800;letter-spacing:-.5px}
+.hdr-logo span{opacity:.7;font-weight:400;font-size:13px;margin-left:6px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:4px}
+.sync-dot.off{background:#fbbf24}
+
+/* NAV */
+.nav{background:var(--or);display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;border-top:1px solid rgba(255,255,255,.15)}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{flex:0 0 auto;padding:10px 16px;color:rgba(255,255,255,.65);font-size:12px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;-webkit-tap-highlight-color:transparent;transition:all .15s}
+.nav-btn.on{color:#fff;border-bottom-color:#fff;background:rgba(0,0,0,.1)}
+
+/* VIEWS */
+.view{display:none;padding:14px;max-width:640px;margin:0 auto;padding-bottom:40px}
+.view.on{display:block}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--brd);border-radius:14px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.card-title{font-size:14px;font-weight:700}
+
+/* STATS BAR */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--brd);border-radius:12px;padding:12px;text-align:center}
+.stat-v{font-size:22px;font-weight:800}
+.stat-l{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
+/* FIELDS */
+.fld{margin-bottom:12px}
+.fld:last-child{margin-bottom:0}
+.fld label{font-size:11px;font-weight:700;color:var(--txt2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+.fld input,.fld select,.fld textarea{width:100%;font-size:15px;background:#f8f8f6;border:1px solid var(--brd);border-radius:10px;padding:11px 12px;color:var(--txt);-webkit-appearance:none;outline:none}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--or);background:#fff}
+.fld select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.fld textarea{resize:none;height:70px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sttl{font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.07em;margin:16px 0 8px;display:flex;align-items:center;gap:6px}
+.sep{height:1px;background:var(--brd);margin:12px 0}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border-radius:10px;border:none;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .15s}
+.btn-or{background:var(--or);color:#fff}
+.btn-or:active{background:#b84a22}
+.btn-sec{background:#f0f2f5;color:var(--txt2);border:1px solid var(--brd)}
+.btn-grn{background:#f0fdf4;color:#166534;border:1px solid #86efac}
+.btn-red{background:#fef2f2;color:#991b1b;border:1px solid #fca5a5}
+.btn-blue{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.btn-pur{background:#f5f3ff;color:#5b21b6;border:1px solid #c4b5fd}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+.btn-xs{padding:4px 9px;font-size:11px;border-radius:6px}
+.btn-full{width:100%;justify-content:center;padding:14px;font-size:15px;border-radius:12px}
+.add-btn{width:100%;padding:12px;border:2px dashed var(--brd);border-radius:12px;background:none;color:var(--txt2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;-webkit-tap-highlight-color:transparent}
+
+/* ITEMS LIST */
+.item{background:#fff;border:1px solid var(--brd);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.item-info p{font-size:14px;font-weight:600;color:var(--txt)}
+.item-info span{font-size:12px;color:var(--txt2)}
+.item-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700}
+.badge-or{background:var(--orl);color:#7c2d12}
+.badge-grn{background:#dcfce7;color:#166534}
+.badge-red{background:#fee2e2;color:#991b1b}
+.badge-blue{background:#dbeafe;color:#1e40af}
+.badge-pur{background:#f5f3ff;color:#5b21b6}
+.badge-grey{background:#f1f5f9;color:#475569}
+.badge-teal{background:#ecfeff;color:#0e7490}
+
+/* CHECKLIST */
+.chk-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f0f0f0}
+.chk-item:last-child{border-bottom:none}
+.chk-label{flex:1}
+.chk-label p{font-size:13px;font-weight:600}
+.chk-label span{font-size:11px;color:var(--txt3)}
+.chk-state{display:flex;gap:5px;flex-shrink:0}
+.chk-btn{padding:5px 10px;border-radius:6px;border:1px solid var(--brd);font-size:11px;font-weight:700;cursor:pointer;background:#f8f8f6;color:var(--txt2);-webkit-tap-highlight-color:transparent;transition:all .1s}
+.chk-btn.ok{background:#dcfce7;border-color:#86efac;color:#166534}
+.chk-btn.warn{background:#fef3c7;border-color:#fde68a;color:#92400e}
+.chk-btn.bad{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+
+/* FUEL BAR */
+.fuel-bar{display:flex;align-items:center;gap:10px}
+.fuel-track{flex:1;height:24px;background:#f0f0f0;border:1px solid var(--brd);border-radius:20px;overflow:hidden;cursor:pointer;position:relative;touch-action:none}
+.fuel-fill{height:100%;border-radius:20px;transition:width .1s;background:var(--or)}
+.fuel-lbl{font-size:14px;font-weight:700;min-width:44px;text-align:right}
+.fuel-ticks{display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);margin-top:3px}
+
+/* PHOTOS */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pslot{border:2px dashed var(--brd);border-radius:10px;aspect-ratio:4/3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;position:relative;background:#f8f8f6;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.pslot svg{width:24px;height:24px;stroke:#ccc;fill:none;stroke-width:1.5}
+.pslot .plbl{font-size:11px;color:var(--txt2);text-align:center;font-weight:600}
+.pslot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pslot .pov{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);padding:3px 6px;font-size:10px;color:#fff;font-weight:600}
+input[type=file]{display:none}
+
+/* SIGNATURES */
+.sig-wrap{background:#f8f8f6;border:1px solid var(--brd);border-radius:12px;overflow:hidden;position:relative}
+canvas.sig{width:100%;touch-action:none;display:block;cursor:crosshair;background:#fff}
+.sig-clear{position:absolute;top:8px;right:8px;background:#fff;border:1px solid var(--brd);border-radius:8px;font-size:12px;padding:4px 10px;cursor:pointer;color:var(--txt2);font-weight:600}
+.sig-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:12px;color:var(--txt3);pointer-events:none}
+
+/* DOC TOGGLE */
+.doc-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.doc-item:last-child{border-bottom:none}
+.toggle{width:44px;height:26px;border-radius:13px;background:#e0e0e0;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--grn)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on::after{left:21px}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end;justify-content:center;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.modal-bg.on{display:flex}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:92vh;overflow-y:auto}
+.modal h2{font-size:16px;font-weight:700;margin-bottom:16px}
+.modal-close{float:right;background:#f0f0f0;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:14px;color:var(--txt2)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:400;display:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.toast.on{display:block}
+
+/* LOADING */
+.loading{text-align:center;padding:30px;color:var(--txt3);font-size:13px}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--brd);border-top-color:var(--or);border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY */
+.empty{text-align:center;padding:32px 20px;color:var(--txt3)}
+.empty p{font-size:13px;margin-top:6px}
+
+/* ROW */
+.row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.row:last-child{border-bottom:none}
+.rv{font-weight:700}
+
+/* TABS */
+.vtabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto}
+.vtabs::-webkit-scrollbar{display:none}
+.vtab{flex:0 0 auto;padding:7px 14px;font-size:12px;border-radius:20px;border:1px solid var(--brd);background:#fff;color:var(--txt2);cursor:pointer;font-weight:600;-webkit-tap-highlight-color:transparent}
+.vtab.on{background:var(--or);color:#fff;border-color:var(--or)}
+
+/* EDL HEADER BANNER */
+.edl-banner{background:var(--or);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin:-14px -14px 16px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">🏗️ ISSEO <span>Location & EDL</span></div>
+  <div style="font-size:11px;color:rgba(255,255,255,.8);display:flex;align-items:center">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span id="sync-label">Connexion...</span>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-btn on" onclick="showView('v-parc')">🏗️ Parc</div>
+  <div class="nav-btn" onclick="showView('v-clients')">👥 Clients</div>
+  <div class="nav-btn" onclick="showView('v-contrats')">📋 Contrats</div>
+  <div class="nav-btn" onclick="showView('v-edl')">📝 EDL</div>
+</div>
+
+<!-- PARC -->
+<div class="view on" id="v-parc">
+  <div class="stats" id="parc-stats">
+    <div class="stat"><div class="stat-v" style="color:var(--or)" id="s-machines">—</div><div class="stat-l">Machines</div></div>
+    <div class="stat"><div class="stat-v" style="color:var(--blue)" id="s-contrats">—</div><div class="stat-l">Contrats</div></div>
+    <div class="stat"><div class="stat-v" style="color:var(--grn)" id="s-edls">—</div><div class="stat-l">EDL</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">🏗️ Machines ISSEO</span>
+      <button class="btn btn-or btn-sm" onclick="openModal('m-machine')">＋ Machine</button>
+    </div>
+    <div id="parc-list"><div class="loading"><span class="spinner"></span>Chargement...</div></div>
+  </div>
+</div>
+
+<!-- CLIENTS -->
+<div class="view" id="v-clients">
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">👥 Clients</span>
+      <button class="btn btn-or btn-sm" onclick="openModal('m-client')">＋ Client</button>
+    </div>
+    <div id="clients-list"><div class="loading"><span class="spinner"></span>Chargement...</div></div>
+  </div>
+</div>
+
+<!-- CONTRATS -->
+<div class="view" id="v-contrats">
+  <div class="vtabs">
+    <div class="vtab on" onclick="filterContrats('all',this)">Tous</div>
+    <div class="vtab" onclick="filterContrats('CD',this)">Courte durée</div>
+    <div class="vtab" onclick="filterContrats('LD',this)">Longue durée</div>
+    <div class="vtab" onclick="filterContrats('en_cours',this)">En cours</div>
+  </div>
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">📋 Contrats</span>
+      <button class="btn btn-or btn-sm" onclick="openModal('m-contrat')">＋ Contrat</button>
+    </div>
+    <div id="contrats-list"><div class="loading"><span class="spinner"></span>Chargement...</div></div>
+  </div>
+</div>
+
+<!-- EDL -->
+<div class="view" id="v-edl">
+  <div id="edl-home">
+    <div class="sttl">Contrats actifs — sélectionnez pour créer un EDL</div>
+    <div id="edl-contrats-list"><div class="loading"><span class="spinner"></span>Chargement...</div></div>
+  </div>
+  <div id="edl-form" style="display:none"></div>
+</div>
+
+<!-- MODAL MACHINE -->
+<div class="modal-bg" id="m-machine">
+<div class="modal">
+  <button class="modal-close" onclick="closeModal('m-machine')">✕</button>
+  <h2 id="m-machine-title">Nouvelle machine</h2>
+  <input type="hidden" id="m-machine-id">
+  <div class="fld"><label>Marque / Modèle *</label><input type="text" id="m-modele" placeholder="ex. Hangcha CPCD25"></div>
+  <div class="fld"><label>Type / Désignation</label><input type="text" id="m-type" placeholder="ex. Chariot élévateur 2,5T"></div>
+  <div class="fgrid">
+    <div class="fld"><label>N° de série</label><input type="text" id="m-serie" placeholder="ex. A5BA23954"></div>
+    <div class="fld"><label>N° parc ISSEO</label><input type="text" id="m-parc" placeholder="ex. i5006"></div>
+  </div>
+  <div class="fld"><label>Énergie</label>
+    <select id="m-energie">
+      <option value="thermique">🔥 Thermique</option>
+      <option value="electrique">⚡ Électrique</option>
+      <option value="hybride">♻️ Hybride</option>
+    </select>
+  </div>
+  <div class="fld"><label>Année</label><input type="number" id="m-annee" placeholder="ex. 2022"></div>
+  <div class="fld"><label>Notes</label><textarea id="m-notes" placeholder="Accessoires, particularités..."></textarea></div>
+  <div style="display:flex;gap:8px;margin-top:16px">
+    <button class="btn btn-sec btn-full" onclick="closeModal('m-machine')">Annuler</button>
+    <button class="btn btn-or btn-full" onclick="saveMachine()">💾 Enregistrer</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL CLIENT -->
+<div class="modal-bg" id="m-client">
+<div class="modal">
+  <button class="modal-close" onclick="closeModal('m-client')">✕</button>
+  <h2 id="m-client-title">Nouveau client</h2>
+  <input type="hidden" id="m-client-id">
+  <div class="fld"><label>Société / Nom *</label><input type="text" id="m-cli-nom" placeholder="Nom ou société"></div>
+  <div class="fgrid">
+    <div class="fld"><label>Contact</label><input type="text" id="m-cli-contact" placeholder="Prénom Nom"></div>
+    <div class="fld"><label>Téléphone</label><input type="tel" id="m-cli-tel" placeholder="+33 6 …"></div>
+  </div>
+  <div class="fld"><label>Email</label><input type="email" id="m-cli-email" placeholder="contact@société.fr"></div>
+  <div class="fld"><label>Adresse chantier / livraison</label><textarea id="m-cli-adresse" placeholder="Adresse complète"></textarea></div>
+  <div class="fgrid">
+    <div class="fld"><label>SIRET</label><input type="text" id="m-cli-siret"></div>
+    <div class="fld"><label>N° TVA</label><input type="text" id="m-cli-tva"></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:16px">
+    <button class="btn btn-sec btn-full" onclick="closeModal('m-client')">Annuler</button>
+    <button class="btn btn-or btn-full" onclick="saveClient()">💾 Enregistrer</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL CONTRAT -->
+<div class="modal-bg" id="m-contrat">
+<div class="modal">
+  <button class="modal-close" onclick="closeModal('m-contrat')">✕</button>
+  <h2>Nouveau contrat</h2>
+  <div class="fld"><label>Type de contrat</label>
+    <select id="m-ctr-type" onchange="onContratType()">
+      <option value="CD">📅 Courte durée</option>
+      <option value="LD">🔄 Longue durée full service</option>
+    </select>
+  </div>
+  <div class="fld"><label>Client *</label>
+    <select id="m-ctr-client"><option value="">Sélectionner...</option></select>
+  </div>
+  <div class="fld"><label>Machine *</label>
+    <select id="m-ctr-machine"><option value="">Sélectionner...</option></select>
+  </div>
+  <div class="fgrid">
+    <div class="fld"><label>Date début</label><input type="date" id="m-ctr-debut"></div>
+    <div class="fld"><label>Date fin prévue</label><input type="date" id="m-ctr-fin"></div>
+  </div>
+  <div class="fld"><label>N° contrat</label><input type="text" id="m-ctr-num" placeholder="Auto si vide"></div>
+  <div id="ld-fields" style="display:none">
+    <div class="sep"></div>
+    <div class="sttl">Conditions longue durée</div>
+    <div class="fld"><label>Heures annuelles contractuelles</label><input type="number" id="m-ctr-heures" placeholder="ex. 1000"></div>
+    <div class="fld"><label>Exclusions (éléments NON couverts par le contrat)</label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;text-transform:none;letter-spacing:0"><input type="checkbox" id="ex-fourche" style="width:auto;height:auto"> Fourche</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;text-transform:none;letter-spacing:0"><input type="checkbox" id="ex-pneus" style="width:auto;height:auto"> Pneus / Chenilles</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;text-transform:none;letter-spacing:0"><input type="checkbox" id="ex-godet" style="width:auto;height:auto"> Godet</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;text-transform:none;letter-spacing:0"><input type="checkbox" id="ex-batterie" style="width:auto;height:auto"> Batterie</label>
+        <input type="text" id="ex-autre" placeholder="Autre exclusion...">
+      </div>
+    </div>
+  </div>
+  <div class="fld" style="margin-top:10px"><label>Notes</label><textarea id="m-ctr-notes" placeholder="Conditions particulières..."></textarea></div>
+  <div style="display:flex;gap:8px;margin-top:16px">
+    <button class="btn btn-sec btn-full" onclick="closeModal('m-contrat')">Annuler</button>
+    <button class="btn btn-or btn-full" onclick="saveContrat()">✅ Créer</button>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const {jsPDF} = window.jspdf;
+const {createClient} = supabase;
+
+// ========== SUPABASE ==========
+const SB_URL = 'https://djtkapxiqztyrbajkzva.supabase.co';
+const SB_KEY = 'sb_publishable_K0ZVyQwT1P7DlmyrsR_d7g_aBxti035';
+const db = createClient(SB_URL, SB_KEY);
+
+// ========== STATE ==========
+let machines=[], clients=[], contrats=[], edls=[];
+let contratFilter='all';
+let edlState={};
+let fuelPct=50;
+
+// ========== UTILS ==========
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function today(){return new Date().toISOString().slice(0,10);}
+function fmtDate(d){if(!d)return'—';const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function showToast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),dur);}
+function fuelLabel(p){if(p<=5)return'Vide';if(p<=20)return'1/4';if(p<=45)return'3/8';if(p<=55)return'1/2';if(p<=70)return'5/8';if(p<=88)return'3/4';return'Plein';}
+function setSyncStatus(ok){
+  document.getElementById('sync-dot').className='sync-dot'+(ok?'':' off');
+  document.getElementById('sync-label').textContent=ok?'Synchronisé':'Hors ligne';
+}
+
+function genNumContrat(){
+  const y=new Date().getFullYear();
+  const m=String(new Date().getMonth()+1).padStart(2,'0');
+  return 'C'+y+m+'-'+String(contrats.length+1).padStart(3,'0');
+}
+function genNumEDL(contratId){
+  const y=new Date().getFullYear();
+  const n=edls.filter(e=>e.contrat_id===contratId).length+1;
+  return 'EDL-'+y+'-'+String(n).padStart(3,'0');
+}
+
+// ========== LOAD DATA ==========
+async function loadAll(){
+  try{
+    const [m,c,ct,e]=await Promise.all([
+      db.from('machines').select('*').order('created_at',{ascending:false}),
+      db.from('clients').select('*').order('created_at',{ascending:false}),
+      db.from('contrats').select('*').order('created_at',{ascending:false}),
+      db.from('edls').select('*').order('created_at',{ascending:false})
+    ]);
+    machines=m.data||[];
+    clients=c.data||[];
+    contrats=ct.data||[];
+    edls=e.data||[];
+    setSyncStatus(true);
+    updateStats();
+    renderParc();
+    renderClients();
+    renderContrats();
+    renderEDLHome();
+  }catch(err){
+    setSyncStatus(false);
+    showToast('⚠️ Erreur connexion Supabase');
+  }
+}
+
+function updateStats(){
+  document.getElementById('s-machines').textContent=machines.length;
+  document.getElementById('s-contrats').textContent=contrats.filter(c=>c.statut==='en_cours').length;
+  document.getElementById('s-edls').textContent=edls.length;
+}
+
+// ========== NAVIGATION ==========
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  const btns=document.querySelectorAll('.nav-btn');
+  const idx={'v-parc':0,'v-clients':1,'v-contrats':2,'v-edl':3}[id];
+  if(btns[idx])btns[idx].classList.add('on');
+}
+
+// ========== MODALS ==========
+function openModal(id){
+  if(id==='m-contrat')fillContratSelects();
+  document.getElementById(id).classList.add('on');
+}
+function closeModal(id){document.getElementById(id).classList.remove('on');}
+function onContratType(){
+  document.getElementById('ld-fields').style.display=document.getElementById('m-ctr-type').value==='LD'?'':'none';
+}
+function fillContratSelects(){
+  const cs=document.getElementById('m-ctr-client');
+  cs.innerHTML='<option value="">Sélectionner un client...</option>'+clients.map(c=>`<option value="${c.id}">${c.nom}</option>`).join('');
+  const ms=document.getElementById('m-ctr-machine');
+  ms.innerHTML='<option value="">Sélectionner une machine...</option>'+machines.map(m=>`<option value="${m.id}">${m.modele}${m.parc?' ('+m.parc+')':''}</option>`).join('');
+  document.getElementById('m-ctr-debut').value=today();
+}
+
+// ========== MACHINES ==========
+async function saveMachine(){
+  const id=document.getElementById('m-machine-id').value;
+  const data={modele:document.getElementById('m-modele').value,type:document.getElementById('m-type').value,serie:document.getElementById('m-serie').value,parc:document.getElementById('m-parc').value,energie:document.getElementById('m-energie').value,annee:document.getElementById('m-annee').value,notes:document.getElementById('m-notes').value};
+  if(!data.modele){showToast('⚠️ Modèle obligatoire');return;}
+  showToast('⏳ Enregistrement...');
+  let err;
+  if(id){({error:err}=await db.from('machines').update(data).eq('id',id));}
+  else{({error:err}=await db.from('machines').insert(data));}
+  if(err){showToast('❌ Erreur: '+err.message);return;}
+  closeModal('m-machine');
+  clearForm(['m-machine-id','m-modele','m-type','m-serie','m-parc','m-annee','m-notes']);
+  document.getElementById('m-energie').value='thermique';
+  document.getElementById('m-machine-title').textContent='Nouvelle machine';
+  await loadAll();
+  showToast('✅ Machine enregistrée');
+}
+
+function editMachine(id){
+  const m=machines.find(x=>x.id===id);if(!m)return;
+  document.getElementById('m-machine-id').value=m.id;
+  document.getElementById('m-modele').value=m.modele||'';
+  document.getElementById('m-type').value=m.type||'';
+  document.getElementById('m-serie').value=m.serie||'';
+  document.getElementById('m-parc').value=m.parc||'';
+  document.getElementById('m-energie').value=m.energie||'thermique';
+  document.getElementById('m-annee').value=m.annee||'';
+  document.getElementById('m-notes').value=m.notes||'';
+  document.getElementById('m-machine-title').textContent='Modifier machine';
+  openModal('m-machine');
+}
+
+async function deleteMachine(id){
+  if(!confirm('Supprimer cette machine ?'))return;
+  await db.from('machines').delete().eq('id',id);
+  await loadAll();
+  showToast('🗑️ Machine supprimée');
+}
+
+function renderParc(){
+  const el=document.getElementById('parc-list');
+  if(!machines.length){el.innerHTML='<div class="empty">🚜<p>Aucune machine — ajoutez votre première</p></div>';return;}
+  el.innerHTML=machines.map(m=>`
+    <div class="item">
+      <div class="item-info">
+        <p>${m.modele||'—'} <span class="badge ${m.energie==='electrique'?'badge-blue':m.energie==='hybride'?'badge-pur':'badge-or'}">${m.energie==='electrique'?'⚡ Élec':m.energie==='hybride'?'♻️ Hybride':'🔥 Therm'}</span></p>
+        <span>${[m.type,m.parc?'Parc: '+m.parc:'',m.serie?'S/N: '+m.serie:''].filter(Boolean).join(' · ')}</span>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-sec btn-xs" onclick="editMachine('${m.id}')">✏️</button>
+        <button class="btn btn-red btn-xs" onclick="deleteMachine('${m.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+// ========== CLIENTS ==========
+async function saveClient(){
+  const id=document.getElementById('m-client-id').value;
+  const data={nom:document.getElementById('m-cli-nom').value,contact:document.getElementById('m-cli-contact').value,tel:document.getElementById('m-cli-tel').value,email:document.getElementById('m-cli-email').value,adresse:document.getElementById('m-cli-adresse').value,siret:document.getElementById('m-cli-siret').value,tva:document.getElementById('m-cli-tva').value};
+  if(!data.nom){showToast('⚠️ Nom obligatoire');return;}
+  showToast('⏳ Enregistrement...');
+  let err;
+  if(id){({error:err}=await db.from('clients').update(data).eq('id',id));}
+  else{({error:err}=await db.from('clients').insert(data));}
+  if(err){showToast('❌ Erreur: '+err.message);return;}
+  closeModal('m-client');
+  clearForm(['m-client-id','m-cli-nom','m-cli-contact','m-cli-tel','m-cli-email','m-cli-adresse','m-cli-siret','m-cli-tva']);
+  document.getElementById('m-client-title').textContent='Nouveau client';
+  await loadAll();
+  showToast('✅ Client enregistré');
+}
+
+function editClient(id){
+  const c=clients.find(x=>x.id===id);if(!c)return;
+  document.getElementById('m-client-id').value=c.id;
+  ['nom','contact','tel','email','adresse','siret','tva'].forEach(f=>{
+    const el=document.getElementById('m-cli-'+f);if(el)el.value=c[f]||'';
+  });
+  document.getElementById('m-client-title').textContent='Modifier client';
+  openModal('m-client');
+}
+
+async function deleteClient(id){
+  if(!confirm('Supprimer ce client ?'))return;
+  await db.from('clients').delete().eq('id',id);
+  await loadAll();
+  showToast('🗑️ Client supprimé');
+}
+
+function renderClients(){
+  const el=document.getElementById('clients-list');
+  if(!clients.length){el.innerHTML='<div class="empty">👥<p>Aucun client enregistré</p></div>';return;}
+  el.innerHTML=clients.map(c=>{
+    const nb=contrats.filter(x=>x.client_id===c.id).length;
+    return`<div class="item">
+      <div class="item-info">
+        <p>${c.nom} <span class="badge badge-grey">${nb} contrat${nb>1?'s':''}</span></p>
+        <span>${[c.contact,c.tel].filter(Boolean).join(' · ')}</span>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-sec btn-xs" onclick="editClient('${c.id}')">✏️</button>
+        <button class="btn btn-red btn-xs" onclick="deleteClient('${c.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ========== CONTRATS ==========
+async function saveContrat(){
+  const clientId=document.getElementById('m-ctr-client').value;
+  const machineId=document.getElementById('m-ctr-machine').value;
+  if(!clientId){showToast('⚠️ Sélectionnez un client');return;}
+  if(!machineId){showToast('⚠️ Sélectionnez une machine');return;}
+  const type=document.getElementById('m-ctr-type').value;
+  const excl=type==='LD'?{fourche:document.getElementById('ex-fourche').checked,pneus:document.getElementById('ex-pneus').checked,godet:document.getElementById('ex-godet').checked,batterie:document.getElementById('ex-batterie').checked,autre:document.getElementById('ex-autre').value}:{};
+  const data={num:document.getElementById('m-ctr-num').value||genNumContrat(),type,client_id:clientId,machine_id:machineId,debut:document.getElementById('m-ctr-debut').value||null,fin:document.getElementById('m-ctr-fin').value||null,heures:document.getElementById('m-ctr-heures').value||null,exclusions:excl,notes:document.getElementById('m-ctr-notes').value,statut:'en_cours'};
+  showToast('⏳ Création...');
+  const {error}=await db.from('contrats').insert(data);
+  if(error){showToast('❌ Erreur: '+error.message);return;}
+  closeModal('m-contrat');
+  await loadAll();
+  showToast('✅ Contrat '+data.num+' créé');
+}
+
+function filterContrats(f,el){
+  contratFilter=f;
+  document.querySelectorAll('.vtab').forEach(t=>t.classList.remove('on'));
+  if(el)el.classList.add('on');
+  renderContrats();
+}
+
+async function closeContrat(id){
+  await db.from('contrats').update({statut:'termine'}).eq('id',id);
+  await loadAll();
+  showToast('✅ Contrat clôturé');
+}
+
+function renderContrats(){
+  const el=document.getElementById('contrats-list');
+  let list=contrats;
+  if(contratFilter==='CD')list=list.filter(x=>x.type==='CD');
+  else if(contratFilter==='LD')list=list.filter(x=>x.type==='LD');
+  else if(contratFilter==='en_cours')list=list.filter(x=>x.statut==='en_cours');
+  if(!list.length){el.innerHTML='<div class="empty">📋<p>Aucun contrat</p></div>';return;}
+  el.innerHTML=list.map(c=>{
+    const cli=clients.find(x=>x.id===c.client_id);
+    const mac=machines.find(x=>x.id===c.machine_id);
+    const nbEdl=edls.filter(x=>x.contrat_id===c.id).length;
+    const excl=c.exclusions?[c.exclusions.fourche?'Fourche':'',c.exclusions.pneus?'Pneus/Chenilles':'',c.exclusions.godet?'Godet':'',c.exclusions.batterie?'Batterie':'',c.exclusions.autre||''].filter(Boolean).join(' · '):'';
+    return`<div class="item" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="flex:1">
+          <p style="font-size:14px;font-weight:700;margin-bottom:3px">${c.num} <span class="badge ${c.type==='LD'?'badge-pur':'badge-blue'}">${c.type}</span> <span class="badge ${c.statut==='en_cours'?'badge-grn':'badge-grey'}">${c.statut==='en_cours'?'En cours':'Terminé'}</span></p>
+          <span style="font-size:12px;color:var(--txt2)">${cli?cli.nom:'—'} · ${mac?mac.modele:'—'}</span><br>
+          <span style="font-size:11px;color:var(--txt3)">${fmtDate(c.debut)} → ${c.fin?fmtDate(c.fin):'…'} · ${nbEdl} EDL</span>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button class="btn btn-blue btn-xs" onclick="startEDL('${c.id}','depart')">📝 EDL</button>
+          ${c.statut==='en_cours'?`<button class="btn btn-grn btn-xs" onclick="closeContrat('${c.id}')">✓</button>`:''}
+        </div>
+      </div>
+      ${c.type==='LD'&&c.heures?`<div style="font-size:11px;color:var(--txt2)">⏱ ${c.heures}h/an ${excl?'· ⚠️ Exclu: '+excl:''}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ========== EDL HOME ==========
+function renderEDLHome(){
+  const el=document.getElementById('edl-contrats-list');
+  const active=contrats.filter(c=>c.statut==='en_cours');
+  if(!active.length){el.innerHTML='<div class="empty">📋<p>Aucun contrat en cours — créez d\'abord un contrat</p></div>';return;}
+  el.innerHTML=active.map(c=>{
+    const cli=clients.find(x=>x.id===c.client_id);
+    const mac=machines.find(x=>x.id===c.machine_id);
+    const edlList=edls.filter(x=>x.contrat_id===c.id);
+    const hasDepart=edlList.find(e=>e.type_edl==='depart');
+    return`<div class="card">
+      <p style="font-size:14px;font-weight:700">${c.num} <span class="badge ${c.type==='LD'?'badge-pur':'badge-blue'}">${c.type}</span></p>
+      <p style="font-size:13px;color:var(--txt2);margin:4px 0 10px">${cli?cli.nom:'—'} · ${mac?mac.modele:'—'}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-or btn-sm" onclick="startEDL('${c.id}','depart')">📝 ${hasDepart?'Nouveau départ':'EDL Départ'}</button>
+        ${hasDepart?`<button class="btn btn-grn btn-sm" onclick="startEDL('${c.id}','retour')">📝 EDL Retour</button>`:''}
+        ${edlList.length?`<button class="btn btn-sec btn-sm" onclick="showEDLHistory('${c.id}')">📜 ${edlList.length} EDL</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showEDLHistory(cid){
+  const list=edls.filter(e=>e.contrat_id===cid);
+  const c=contrats.find(x=>x.id===cid);
+  alert('EDL — '+c.num+':\n\n'+list.map(e=>e.num_edl+' · '+(e.type_edl==='retour'?'Retour':'Départ')+' · '+fmtDate(e.date)).join('\n'));
+}
+
+// ========== EDL FORM ==========
+const CHK_ITEMS=[
+  {id:'carrosserie',label:'Carrosserie / Structure',sub:'Déformations, chocs, fissures'},
+  {id:'cabine',label:'Cabine / Vitres',sub:'Vitres, rétroviseurs, porte'},
+  {id:'eclairage_av',label:'Éclairages avant',sub:'Phares, feux de travail'},
+  {id:'eclairage_ar',label:'Éclairages arrière',sub:'Feux stop, recul'},
+  {id:'gyrophare',label:'Gyrophare / Alarme recul',sub:'Fonctionnement'},
+  {id:'chenilles',label:'Chenilles / Roues / Pneus',sub:'Usure, tension, état'},
+  {id:'godet',label:'Godet / Fourches / Accessoires',sub:'État, jeu de dents'},
+  {id:'fleche',label:'Flèche / Bras / Mât',sub:'Vérin, structure, jeu'},
+  {id:'huiles',label:'Niveaux huiles / Fuites',sub:'Moteur, hydraulique'},
+  {id:'proprete',label:'Propreté générale',sub:'Intérieur et extérieur'},
+];
+const CHK_ELEC=[
+  {id:'chargeur_cable',label:'⚡ Câble de charge',sub:'État câble, connecteur, gaine'},
+  {id:'chargeur_fonct',label:'⚡ Chargeur fonctionnel',sub:'Charge correcte, voyants OK'},
+  {id:'batterie_niv',label:'⚡ Niveau batterie',sub:'% charge au départ/retour'},
+];
+const DOCS_ENGIN=[
+  {id:'vgp',label:'VGP',sub:'Vérification Générale Périodique'},
+  {id:'ce',label:'Certificat CE',sub:'Marquage CE machine'},
+  {id:'carnet',label:'Carnet d\'entretien',sub:'Remis au locataire'},
+  {id:'notice',label:'Notice d\'utilisation',sub:'Manuel opérateur'},
+];
+const DOCS_LOC=[
+  {id:'caces',label:'CACES / Autorisation de conduite',sub:'Validité vérifiée'},
+  {id:'assurance',label:'Attestation assurance chantier',sub:'En cours de validité'},
+];
+
+function startEDL(contratId, typeEdl){
+  const c=contrats.find(x=>x.id===contratId);if(!c)return;
+  const cli=clients.find(x=>x.id===c.client_id);
+  const mac=machines.find(x=>x.id===c.machine_id);
+  const lastDepart=edls.filter(e=>e.contrat_id===contratId&&e.type_edl==='depart').slice(-1)[0];
+  edlState={
+    contrat_id:contratId,
+    type_edl:typeEdl||'depart',
+    num_edl:genNumEDL(contratId),
+    date:today(),
+    client:cli||{},
+    machine:mac||{},
+    contrat:c,
+    lastDepart:lastDepart||null,
+    horametre:'',
+    fuel:50,
+    fuel_label:'1/2',
+    checklist:{},
+    docs:{},
+    damages:[],
+    photos:{faces:[null,null,null,null],dash:null,dmg:[]},
+    note:'',
+    sig_loueur:null,
+    sig_locataire:null
+  };
+  fuelPct=50;
+  buildEDLForm();
+  document.getElementById('edl-home').style.display='none';
+  document.getElementById('edl-form').style.display='block';
+  showView('v-edl');
+  window.scrollTo(0,0);
+}
+
+function buildEDLForm(){
+  const s=edlState;
+  const isRet=s.type_edl==='retour';
+  const isElec=s.machine.energie==='electrique'||s.machine.energie==='hybride';
+  const chkAll=[...CHK_ITEMS,...(isElec?CHK_ELEC:[])];
+
+  const html=`
+  <div class="edl-banner">
+    <div>
+      <p style="font-size:16px;font-weight:800">${s.num_edl}</p>
+      <p style="font-size:12px;opacity:.85">${isRet?'Retour':'Mise en service'} · ${s.client.nom||'—'} · ${s.machine.modele||'—'}</p>
+    </div>
+    <button onclick="cancelEDL()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;font-weight:600">✕ Annuler</button>
+  </div>
+
+  <div class="sttl">📋 Informations</div>
+  <div class="card">
+    <div class="row"><span>Contrat</span><span class="rv">${s.contrat.num}</span></div>
+    <div class="row"><span>Client</span><span class="rv">${s.client.nom||'—'}</span></div>
+    <div class="row"><span>Machine</span><span class="rv">${s.machine.modele||'—'} ${s.machine.parc?'('+s.machine.parc+')':''}</span></div>
+    <div class="row"><span>N° série</span><span class="rv">${s.machine.serie||'—'}</span></div>
+    <div class="row"><span>Type EDL</span><span class="rv"><span class="badge ${isRet?'badge-grn':'badge-or'}">${isRet?'Retour':'Départ'}</span></span></div>
+    <div class="fld" style="margin-top:10px"><label>Date</label><input type="date" id="edl-date" value="${today()}"></div>
+  </div>
+
+  <div class="sttl">⏱ Horamètre</div>
+  <div class="card">
+    <div class="fld">
+      <label>${isRet?'Horamètre au retour':'Horamètre à la mise en service'}</label>
+      <input type="number" id="edl-h" placeholder="ex. 1250" min="0"
+        style="font-size:26px;font-weight:800;text-align:center;padding:14px;border-radius:12px;border:2px solid var(--brd);background:#f8f8f6;width:100%"
+        oninput="calcDiff()">
+    </div>
+    ${isRet&&s.lastDepart?`
+    <div class="fld">
+      <label>Horamètre départ (EDL ${s.lastDepart.num_edl})</label>
+      <input type="number" id="edl-h-dep" value="${s.lastDepart.horametre||''}"
+        style="font-size:18px;font-weight:700;text-align:center;padding:12px;border-radius:10px;border:1px solid #86efac;background:#f0fdf4;width:100%"
+        oninput="calcDiff()">
+    </div>
+    <div id="edl-diff" style="text-align:center;padding:8px;font-size:15px;font-weight:700"></div>`:''}
+  </div>
+
+  <div class="sttl">${isElec?'⚡ Niveau de charge':'⛽ Niveau de carburant'}</div>
+  <div class="card">
+    <div class="fuel-bar">
+      <span style="font-size:22px">${isElec?'🔋':'⛽'}</span>
+      <div class="fuel-track" id="edl-fuel-track">
+        <div class="fuel-fill" id="edl-fuel-fill" style="width:50%"></div>
+      </div>
+      <span class="fuel-lbl" id="edl-fuel-lbl">1/2</span>
+    </div>
+    <div class="fuel-ticks"><span>Vide</span><span>1/4</span><span>1/2</span><span>3/4</span><span>Plein</span></div>
+    ${isRet&&s.lastDepart?`<p style="font-size:12px;color:var(--txt3);margin-top:8px">Niveau au départ : ${s.lastDepart.fuel_label||'—'}</p>`:''}
+  </div>
+
+  <div class="sttl">✅ État visuel</div>
+  <div class="card">
+    ${chkAll.map(item=>`
+    <div class="chk-item" id="ci-${item.id}">
+      <div class="chk-label"><p>${item.label}</p><span>${item.sub}</span></div>
+      <div class="chk-state">
+        <button class="chk-btn ok" onclick="setChk('${item.id}','ok',this)">✓</button>
+        <button class="chk-btn warn" onclick="setChk('${item.id}','warn',this)">⚠</button>
+        <button class="chk-btn bad" onclick="setChk('${item.id}','bad',this)">✗</button>
+      </div>
+    </div>`).join('')}
+  </div>
+
+  <div class="sttl">📄 Documents engin</div>
+  <div class="card">
+    ${DOCS_ENGIN.map(d=>`
+    <div class="doc-item">
+      <div><p style="font-size:13px;font-weight:600">${d.label}</p><p style="font-size:11px;color:var(--txt3)">${d.sub}</p></div>
+      <button class="toggle" id="tog-${d.id}" onclick="toggleDoc('${d.id}',this)"></button>
+    </div>`).join('')}
+  </div>
+
+  <div class="sttl">📋 Documents locataire</div>
+  <div class="card">
+    ${DOCS_LOC.map(d=>`
+    <div class="doc-item">
+      <div><p style="font-size:13px;font-weight:600">${d.label}</p><p style="font-size:11px;color:var(--txt3)">${d.sub}</p></div>
+      <button class="toggle" id="tog-${d.id}" onclick="toggleDoc('${d.id}',this)"></button>
+    </div>`).join('')}
+    ${s.contrat.type==='LD'&&s.contrat.exclusions&&Object.values(s.contrat.exclusions).some(Boolean)?`
+    <div class="sep"></div>
+    <p style="font-size:12px;font-weight:700;color:var(--red);margin-top:8px">⚠️ Exclusions contrat LD :</p>
+    <p style="font-size:12px;color:var(--txt2);margin-top:4px">${[s.contrat.exclusions.fourche?'Fourche':'',s.contrat.exclusions.pneus?'Pneus/Chenilles':'',s.contrat.exclusions.godet?'Godet':'',s.contrat.exclusions.batterie?'Batterie':'',s.contrat.exclusions.autre||''].filter(Boolean).join(' · ')}</p>`:''}
+  </div>
+
+  <div class="sttl">📷 Photos 4 faces</div>
+  <div class="card">
+    <div class="pgrid">
+      ${['Avant','Arrière','Gauche','Droite'].map((lbl,i)=>`
+      <label class="pslot" id="sl-f${i}">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="plbl">${lbl}</span>
+        <input type="file" accept="image/*" capture="environment" onchange="loadFace(event,${i},'${lbl}')">
+      </label>`).join('')}
+    </div>
+  </div>
+
+  <div class="sttl">📷 Photo horamètre</div>
+  <div class="card">
+    <label class="pslot" id="sl-dash" style="aspect-ratio:16/9">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      <span class="plbl">Horamètre / Tableau de bord</span>
+      <input type="file" accept="image/*" capture="environment" onchange="loadDash(event)">
+    </label>
+  </div>
+
+  <div class="sttl">📷 Photos dommages <span class="badge badge-red" id="dmg-cnt">0</span></div>
+  <div class="card">
+    <div id="dmg-photos"></div>
+    <button class="add-btn" onclick="addDmgPhoto()">＋ Photo dommage</button>
+  </div>
+
+  <div class="sttl">⚠️ Dommages constatés</div>
+  <div id="dmg-list"></div>
+  <button class="add-btn" style="margin-bottom:12px" onclick="addDmg()">＋ Ajouter constat</button>
+
+  <div class="sttl">📝 Note complémentaire</div>
+  <div class="card">
+    <div class="fld"><textarea id="edl-note" placeholder="Observations, instructions particulières..."></textarea></div>
+  </div>
+
+  <div class="sttl">✍️ Signature loueur (ISSEO)</div>
+  <div class="card">
+    <div class="sig-wrap">
+      <canvas class="sig" id="sig-loueur" height="130"></canvas>
+      <button class="sig-clear" onclick="clearSig('loueur')">Effacer</button>
+      <span class="sig-hint">Signez ici avec le doigt</span>
+    </div>
+  </div>
+
+  <div class="sttl">✍️ Signature locataire</div>
+  <div class="card">
+    <div class="sig-wrap">
+      <canvas class="sig" id="sig-locataire" height="130"></canvas>
+      <button class="sig-clear" onclick="clearSig('locataire')">Effacer</button>
+      <span class="sig-hint">Signez ici avec le doigt</span>
+    </div>
+  </div>
+
+  <div class="sttl">📤 Envoi</div>
+  <div class="card">
+    <div class="fld"><label>Email locataire</label><input type="email" id="edl-email" value="${s.client.email||''}"></div>
+    <div class="fld"><label>Copie ISSEO</label><input type="email" id="edl-cc" value="contact@isseo.fr"></div>
+    <div class="fld"><label>WhatsApp locataire</label><input type="tel" id="edl-wa" value="${s.client.tel||''}"></div>
+  </div>
+
+  <button class="btn btn-or btn-full" style="margin-bottom:10px" onclick="saveAndPDF()">💾 Enregistrer + PDF</button>
+  <div style="display:flex;gap:8px;margin-bottom:24px">
+    <button class="btn btn-full" style="background:#25D366;color:#fff;flex:1" onclick="sendWA()">💬 WhatsApp</button>
+    <button class="btn btn-full" style="background:#2563eb;color:#fff;flex:1" onclick="sendMail()">✉️ Mail</button>
+  </div>`;
+
+  document.getElementById('edl-form').innerHTML=html;
+
+  setTimeout(()=>{
+    initSig('sig-loueur');
+    initSig('sig-locataire');
+    initFuelTrack();
+  },200);
+}
+
+function cancelEDL(){
+  document.getElementById('edl-home').style.display='';
+  document.getElementById('edl-form').style.display='none';
+  edlState={};
+  renderEDLHome();
+  window.scrollTo(0,0);
+}
+
+function calcDiff(){
+  const ret=parseFloat(document.getElementById('edl-h').value)||0;
+  const depEl=document.getElementById('edl-h-dep');
+  const diffEl=document.getElementById('edl-diff');
+  if(!depEl||!diffEl)return;
+  const dep=parseFloat(depEl.value)||0;
+  if(dep>0&&ret>0){
+    const d=ret-dep;
+    diffEl.innerHTML=`<span style="color:${d>=0?'var(--grn)':'var(--red)'}">Δ ${d>=0?'+':''}${d} heures consommées</span>`;
+  }
+}
+
+function setChk(id,val,btn){
+  edlState.checklist[id]=val;
+  const wrap=document.getElementById('ci-'+id);
+  if(wrap)wrap.querySelectorAll('.chk-btn').forEach(b=>{b.style.opacity='.35';b.style.fontWeight='400';});
+  btn.style.opacity='1';btn.style.fontWeight='800';
+}
+
+function toggleDoc(id,btn){edlState.docs[id]=btn.classList.toggle('on');}
+
+// FUEL
+function initFuelTrack(){
+  const t=document.getElementById('edl-fuel-track');
+  if(!t)return;
+  function handle(e){
+    e.preventDefault();
+    const r=t.getBoundingClientRect();
+    const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+    fuelPct=Math.round(Math.max(0,Math.min(100,x/r.width*100)));
+    edlState.fuel=fuelPct;
+    edlState.fuel_label=fuelLabel(fuelPct);
+    const fill=document.getElementById('edl-fuel-fill');
+    const lbl=document.getElementById('edl-fuel-lbl');
+    if(fill)fill.style.width=fuelPct+'%';
+    if(fill)fill.style.background=fuelPct<20?'var(--red)':fuelPct<40?'#f59e0b':'var(--or)';
+    if(lbl)lbl.textContent=fuelLabel(fuelPct);
+  }
+  t.addEventListener('click',handle);
+  t.addEventListener('touchstart',handle,{passive:false});
+  t.addEventListener('touchmove',handle,{passive:false});
+}
+
+// PHOTOS - Fixed for Android
+function loadFace(e,idx,lbl){
+  const f=e.target.files[0];if(!f)return;
+  resizeImage(f,800,(data)=>{
+    edlState.photos.faces[idx]=data;
+    const sl=document.getElementById('sl-f'+idx);
+    updatePhotoSlot(sl,data,lbl);
+  });
+}
+
+function loadDash(e){
+  const f=e.target.files[0];if(!f)return;
+  resizeImage(f,800,(data)=>{
+    edlState.photos.dash=data;
+    const sl=document.getElementById('sl-dash');
+    updatePhotoSlot(sl,data,'Horamètre');
+  });
+}
+
+function updatePhotoSlot(sl,src,lbl){
+  if(!sl)return;
+  let img=sl.querySelector('img');
+  if(!img){img=document.createElement('img');sl.appendChild(img);}
+  img.src=src;
+  let ov=sl.querySelector('.pov');
+  if(!ov){ov=document.createElement('div');ov.className='pov';sl.appendChild(ov);}
+  ov.textContent=lbl;
+}
+
+// Resize image for Android compatibility
+function resizeImage(file,maxW,cb){
+  const url=URL.createObjectURL(file);
+  const img=new Image();
+  img.onload=()=>{
+    URL.revokeObjectURL(url);
+    const canvas=document.createElement('canvas');
+    const ratio=Math.min(maxW/img.width,maxW/img.height,1);
+    canvas.width=Math.round(img.width*ratio);
+    canvas.height=Math.round(img.height*ratio);
+    canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+    cb(canvas.toDataURL('image/jpeg',0.75));
+  };
+  img.onerror=()=>{
+    // Fallback to FileReader
+    const r=new FileReader();
+    r.onload=ev=>cb(ev.target.result);
+    r.readAsDataURL(file);
+  };
+  img.src=url;
+}
+
+let dmgPhCount=0;
+function addDmgPhoto(){
+  const idx=edlState.photos.dmg.length;
+  edlState.photos.dmg.push(null);
+  const id='dph'+dmgPhCount++;
+  const list=document.getElementById('dmg-photos');
+  const wrap=document.createElement('div');
+  wrap.style.marginBottom='10px';
+  wrap.innerHTML=`
+    <label class="pslot" style="aspect-ratio:4/3;margin-bottom:6px" id="${id}-sl">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="plbl">Photo dommage</span>
+      <input type="file" accept="image/*" capture="environment">
+    </label>
+    <input type="text" placeholder="Description du dommage..." style="width:100%;font-size:14px;padding:10px;border-radius:10px;border:1px solid var(--brd);background:#f8f8f6">`;
+  list.appendChild(wrap);
+  wrap.querySelector('input[type=file]').addEventListener('change',function(){
+    const f=this.files[0];if(!f)return;
+    resizeImage(f,800,(data)=>{
+      edlState.photos.dmg[idx]={src:data,desc:''};
+      updatePhotoSlot(wrap.querySelector('.pslot'),data,'Dommage '+(idx+1));
+    });
+  });
+  wrap.querySelector('input[type=text]').addEventListener('input',function(){
+    if(edlState.photos.dmg[idx])edlState.photos.dmg[idx].desc=this.value;
+  });
+  document.getElementById('dmg-cnt').textContent=list.querySelectorAll('.pslot').length;
+}
+
+let dmgCount=0;
+function addDmg(){
+  const idx=edlState.damages.length;
+  edlState.damages.push({loc:'',desc:'',resp:'locataire'});
+  const list=document.getElementById('dmg-list');
+  const div=document.createElement('div');
+  div.className='card';div.style.marginBottom='8px';div.style.background='#fff8f6';
+  div.innerHTML=`<div style="position:relative">
+    <button onclick="this.parentElement.parentElement.remove();edlState.damages[${idx}]=null" style="position:absolute;top:0;right:0;background:none;border:none;color:var(--txt3);cursor:pointer;font-size:20px;line-height:1">✕</button>
+    <div class="fld"><label>Localisation</label><input type="text" placeholder="ex. Fourche gauche, pare-chocs..." oninput="edlState.damages[${idx}].loc=this.value"></div>
+    <div class="fld"><label>Description</label><textarea placeholder="Nature du dommage..." oninput="edlState.damages[${idx}].desc=this.value" style="height:60px"></textarea></div>
+    <div class="fld"><label>Responsabilité</label>
+      <select onchange="edlState.damages[${idx}].resp=this.value">
+        <option value="locataire">Locataire responsable</option>
+        <option value="loueur">Locataire NON responsable</option>
+      </select>
+    </div>
+  </div>`;
+  list.appendChild(div);
+}
+
+// ========== SIGNATURES ==========
+function initSig(id){
+  const c=document.getElementById(id);if(!c)return;
+  const ctx=c.getContext('2d');
+  c.width=c.offsetWidth||340;
+  ctx.strokeStyle='#1a1a1a';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';
+  let drawing=false,lx=0,ly=0;
+  function pos(e){const r=c.getBoundingClientRect();const s=e.touches?e.touches[0]:e;return{x:(s.clientX-r.left)*(c.width/r.width),y:(s.clientY-r.top)*(c.height/r.height)};}
+  c.addEventListener('mousedown',e=>{drawing=true;const p=pos(e);lx=p.x;ly=p.y;});
+  c.addEventListener('mousemove',e=>{if(!drawing)return;const p=pos(e);ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(p.x,p.y);ctx.stroke();lx=p.x;ly=p.y;});
+  c.addEventListener('mouseup',()=>drawing=false);
+  c.addEventListener('mouseleave',()=>drawing=false);
+  c.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;const p=pos(e);lx=p.x;ly=p.y;},{passive:false});
+  c.addEventListener('touchmove',e=>{e.preventDefault();if(!drawing)return;const p=pos(e);ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(p.x,p.y);ctx.stroke();lx=p.x;ly=p.y;},{passive:false});
+  c.addEventListener('touchend',()=>drawing=false);
+}
+
+function clearSig(w){const c=document.getElementById('sig-'+w);if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);}
+function canvasEmpty(c){if(!c)return true;const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;for(let i=3;i<d.length;i+=4)if(d[i]>0)return false;return true;}
+
+// ========== COLLECT & SAVE ==========
+function collectState(){
+  edlState.date=document.getElementById('edl-date').value||today();
+  edlState.horametre=document.getElementById('edl-h').value||'';
+  edlState.fuel_label=fuelLabel(fuelPct);
+  edlState.fuel=fuelPct;
+  edlState.note=document.getElementById('edl-note').value||'';
+  const sl=document.getElementById('sig-loueur');
+  const st=document.getElementById('sig-locataire');
+  if(!canvasEmpty(sl))edlState.sig_loueur=sl.toDataURL('image/png');
+  if(!canvasEmpty(st))edlState.sig_locataire=st.toDataURL('image/png');
+  edlState.damages=edlState.damages.filter(Boolean);
+}
+
+async function saveEDL(){
+  collectState();
+  const payload={
+    contrat_id:edlState.contrat_id,
+    num_edl:edlState.num_edl,
+    type_edl:edlState.type_edl,
+    date:edlState.date,
+    horametre:edlState.horametre,
+    fuel:edlState.fuel,
+    fuel_label:edlState.fuel_label,
+    checklist:edlState.checklist,
+    docs:edlState.docs,
+    damages:edlState.damages,
+    photos:edlState.photos,
+    note:edlState.note,
+    sig_loueur:edlState.sig_loueur||null,
+    sig_locataire:edlState.sig_locataire||null
+  };
+  const {error}=await db.from('edls').insert(payload);
+  if(error){showToast('❌ Erreur sauvegarde: '+error.message);return false;}
+  await loadAll();
+  return true;
+}
+
+async function saveAndPDF(){
+  showToast('⏳ Enregistrement...');
+  const ok=await saveEDL();
+  if(!ok)return;
+  showToast('✅ Enregistré !');
+  setTimeout(()=>genPDF(),300);
+}
+
+// ========== PDF ==========
+function genPDF(){
+  const s=edlState;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,M=15,CW=W-2*M;let y=M;
+  const or=[216,90,48];
+
+  doc.setFillColor(...or);doc.rect(0,0,W,28,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont(undefined,'bold');
+  doc.text('État des Lieux — ISSEO Location',M,13);
+  doc.setFontSize(9);doc.setFont(undefined,'normal');
+  doc.text((s.type_edl==='retour'?'Retour machine':'Mise en service')+' · '+s.num_edl+' · '+fmtDate(s.date),M,21);
+  doc.setTextColor(0,0,0);y=36;
+
+  function section(t){if(y>268){doc.addPage();y=M;}doc.setFillColor(250,236,231);doc.rect(M,y,CW,7,'F');doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(...or);doc.text(t,M+3,y+5);doc.setTextColor(0,0,0);doc.setFont(undefined,'normal');y+=10;}
+  function row(l,v,red){if(y>275){doc.addPage();y=M;}doc.setFontSize(8.5);doc.setTextColor(100,100,100);doc.text(l,M,y);doc.setTextColor(red?163:0,red?45:0,red?45:0);doc.setFont(undefined,'bold');doc.text(String(v||'—'),M+72,y);doc.setFont(undefined,'normal');doc.setTextColor(0,0,0);y+=5.5;}
+
+  section('Dossier');
+  row('N° EDL',s.num_edl);row('Contrat',s.contrat.num);row('Type',s.type_edl==='retour'?'Retour machine':'Mise en service');row('Date',fmtDate(s.date));y+=2;
+
+  section('Client');
+  row('Société',s.client.nom);row('Contact',s.client.contact);row('Email',s.client.email);row('Téléphone',s.client.tel);y+=2;
+
+  section('Machine');
+  row('Modèle',s.machine.modele);row('Type',s.machine.type);row('N° série',s.machine.serie);row('N° parc ISSEO',s.machine.parc);
+  row('Horamètre',(s.horametre||'—')+' h');
+  row(s.machine.energie==='electrique'?'Niveau charge':'Carburant',s.fuel_label);
+  if(s.type_edl==='retour'&&s.lastDepart){
+    const dep=parseFloat(s.lastDepart.horametre)||0;
+    const ret=parseFloat(s.horametre)||0;
+    row('Horamètre départ',dep+' h');
+    row('Heures consommées',(ret-dep>=0?'+':'')+(ret-dep)+' h',true);
+  }
+  y+=2;
+
+  section('État visuel');
+  const chkAll=[...CHK_ITEMS,...(s.machine.energie!=='thermique'?CHK_ELEC:[])];
+  chkAll.forEach(item=>{
+    if(y>273){doc.addPage();y=M;}
+    const v=s.checklist[item.id];
+    const col=v==='ok'?[22,163,74]:v==='warn'?[217,119,6]:v==='bad'?[220,38,38]:[180,180,180];
+    doc.setFontSize(8);doc.setTextColor(...col);doc.text(v==='ok'?'✓ OK':v==='warn'?'⚠ Attention':v==='bad'?'✗ Défaut':'— Non vérifié',M,y);
+    doc.setTextColor(50,50,50);doc.text(item.label,M+28,y);y+=5.5;
+  });
+  y+=2;
+
+  section('Documents');
+  [...DOCS_ENGIN,...DOCS_LOC].forEach(d=>{
+    if(y>273){doc.addPage();y=M;}
+    const v=s.docs[d.id];
+    doc.setFontSize(8);doc.setTextColor(v?22:160,v?163:160,v?74:160);
+    doc.text(v?'✓ OK':'—',M,y);doc.setTextColor(50,50,50);doc.text(d.label,M+12,y);y+=5.5;
+  });
+  y+=2;
+
+  if(s.contrat.type==='LD'){
+    section('Contrat LD');
+    row('Heures contractuelles',(s.contrat.heures||'—')+' h/an');
+    const excl=s.contrat.exclusions?[s.contrat.exclusions.fourche?'Fourche':'',s.contrat.exclusions.pneus?'Pneus/Chenilles':'',s.contrat.exclusions.godet?'Godet':'',s.contrat.exclusions.batterie?'Batterie':'',s.contrat.exclusions.autre||''].filter(Boolean).join(', '):'';
+    if(excl)row('Exclusions',excl,true);
+    y+=2;
+  }
+
+  const dv=s.damages.filter(Boolean);
+  if(dv.length){
+    section('Dommages constatés');
+    dv.forEach((d,i)=>{
+      if(y>265){doc.addPage();y=M;}
+      const resp=d.resp==='locataire';
+      doc.setFillColor(resp?254:240,resp?242:253,resp?242:244);
+      doc.rect(M,y-3,CW,13,'F');
+      doc.setFont(undefined,'bold');doc.setFontSize(8);
+      doc.setTextColor(resp?180:59,resp?30:109,resp?30:17);
+      doc.text((i+1)+'. '+(d.loc||'Zone'),M+2,y+1);
+      doc.text(resp?'⚠ Responsable locataire':'✓ NON responsable locataire',M+CW-60,y+1);
+      doc.setFont(undefined,'normal');doc.setTextColor(60,60,60);
+      const lines=doc.splitTextToSize(d.desc||'',CW-4);
+      doc.text(lines,M+2,y+7);y+=15+(lines.length-1)*4;
+    });
+    y+=2;
+  }
+
+  if(s.note){
+    section('Notes');
+    const lines=doc.splitTextToSize(s.note,CW);
+    doc.setFontSize(9);doc.text(lines,M,y);y+=lines.length*5+4;
+  }
+
+  if(s.sig_loueur||s.sig_locataire){
+    if(y>220){doc.addPage();y=M;}
+    section('Signatures');
+    const sw=(CW-10)/2;
+    doc.setFontSize(8);doc.setTextColor(80,80,80);
+    doc.text('Loueur — ISSEO',M,y);doc.text('Locataire',M+sw+10,y);y+=4;
+    doc.setDrawColor(220,220,220);doc.rect(M,y,sw,34);doc.rect(M+sw+10,y,sw,34);
+    if(s.sig_loueur)try{doc.addImage(s.sig_loueur,'PNG',M+1,y+1,sw-2,32);}catch(e){}
+    if(s.sig_locataire)try{doc.addImage(s.sig_locataire,'PNG',M+sw+11,y+1,sw-2,32);}catch(e){}
+    y+=40;
+  }
+
+  const allPh=[];
+  ['Avant','Arrière','Gauche','Droite'].forEach((l,i)=>{if(s.photos.faces[i])allPh.push({src:s.photos.faces[i],lbl:'Face '+l});});
+  if(s.photos.dash)allPh.push({src:s.photos.dash,lbl:'Horamètre'});
+  s.photos.dmg.forEach((p,i)=>{if(p&&p.src)allPh.push({src:p.src,lbl:'Dommage '+(i+1)+(p.desc?' — '+p.desc:'')});});
+  if(allPh.length){
+    doc.addPage();y=M;section('Photos');
+    let col=0;const PW=88,PH=65,GAP=8;
+    for(const ph of allPh){
+      if(y+PH>282){doc.addPage();y=M;}
+      const x=M+col*(PW+GAP);
+      try{doc.addImage(ph.src,'JPEG',x,y,PW,PH);}catch(e){}
+      doc.setFontSize(7);doc.setTextColor(80,80,80);
+      doc.text(ph.lbl,x,y+PH+4,{maxWidth:PW});
+      col++;if(col===2){col=0;y+=PH+12;}
+    }
+  }
+
+  const pc=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pc;i++){
+    doc.setPage(i);doc.setFontSize(7);doc.setTextColor(160,160,160);
+    doc.text('ISSEO Location · '+s.num_edl+' · '+s.contrat.num+' · Page '+i+'/'+pc,M,291);
+  }
+
+  doc.save('EDL_'+s.num_edl+'_'+s.contrat.num+'.pdf');
+  showToast('✅ PDF généré !');
+}
+
+// ========== MAIL & WHATSAPP (Fixed) ==========
+function buildText(){
+  collectState();
+  const s=edlState;
+  const dv=s.damages.filter(Boolean);
+  return `ISSEO — État des lieux ${s.type_edl==='retour'?'Retour':'Mise en service'}
+N° EDL : ${s.num_edl}
+Contrat : ${s.contrat.num}
+Date : ${fmtDate(s.date)}
+Client : ${s.client.nom||'—'}
+Machine : ${s.machine.modele||'—'} (${s.machine.parc||'—'})
+Horamètre : ${s.horametre||'—'} h
+Carburant/Charge : ${fuelLabel(fuelPct)}
+${dv.length?'\nDommages :\n'+dv.map((d,i)=>'• '+(d.loc||'Zone '+(i+1))+' : '+(d.desc||'')+(d.resp==='locataire'?' [Responsable locataire]':' [NON responsable]')).join('\n'):'\nAucun dommage constaté.'}
+${s.note?'\nNote : '+s.note:''}
+
+Document PDF joint séparément.
+— ISSEO`;
+}
+
+function sendMail(){
+  collectState();
+  const dest=document.getElementById('edl-email').value||'';
+  const cc=document.getElementById('edl-cc').value||'';
+  const s=edlState;
+  const sub=`État des lieux ${s.type_edl==='retour'?'Retour':'Mise en service'} — ${s.machine.modele||''} — ${s.contrat.num}`;
+  // Create a link and click it - more reliable than window.location
+  const a=document.createElement('a');
+  a.href='mailto:'+dest+'?subject='+encodeURIComponent(sub)+(cc?'&cc='+encodeURIComponent(cc):'')+('&body='+encodeURIComponent(buildText()));
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('📧 Client mail ouvert');
+}
+
+function sendWA(){
+  let num=document.getElementById('edl-wa').value.replace(/[\s\-().+]/g,'');
+  if(!num){showToast('⚠️ Entrez un numéro WhatsApp');return;}
+  if(num.startsWith('0'))num='33'+num.slice(1);
+  const a=document.createElement('a');
+  a.href='https://wa.me/'+num+'?text='+encodeURIComponent(buildText());
+  a.target='_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// ========== HELPERS ==========
+function clearForm(ids){ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
+
+// ========== INIT ==========
+loadAll();
+</script>
+</body>
+</html>
